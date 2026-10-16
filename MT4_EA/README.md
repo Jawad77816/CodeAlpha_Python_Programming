@@ -26,7 +26,30 @@ ZigZag-style indicator.
 
 ---
 
-## 2. ⚠️ The one thing you MUST check — parameters
+## 1b. Confirmed from your Data Window
+
+Your screenshots confirmed the setup:
+
+- **Buffer 0** (`ZigZag(156,5,2)` line) = **bottom = BUY** (value = candle Low)
+- **Buffer 1** (`Value 2`) = **top = SELL** (value = candle High)
+- Empty slots read as `0.0000` → treated as "no signal"
+- Parameters `156, 5, 2` match
+
+### Why it may show no trades even when correct
+ZigZag plots a pivot **back at the extreme candle**. By the time the pivot
+is *confirmed*, that candle is already several bars in the past. So checking
+only the last closed bar misses it. **v1.10 scans a window** (`ScanBars`) of
+recent bars for a newly-appeared marker, which fixes this.
+
+### Debug mode
+`DebugMode = true` prints to the **Experts** tab (bottom of MT4) every new
+bar, e.g. `Scan: newestBUY=... newestSELL=...`. If those times are blank,
+`iCustom` isn't reading the indicator (parameter/name problem). If they show
+real times and advance, signals are being read correctly.
+
+---
+
+## 2. ⚠️ If it still never trades — check parameters
 
 The tooltip shows `ZigZag(156,5,2)`. The EA passes those three numbers to
 the indicator in this order: **Depth = 156, Deviation = 5, Backstep = 2**
@@ -89,10 +112,11 @@ no EA can, because the indicator itself redraws. Backtest first.
 | `InpDepth / InpDeviation / InpBackstep` | 156 / 5 / 2 | Indicator params (from tooltip) |
 | `BuyBufferIndex` | 0 | Buffer with bottom/BUY markers (Lime) |
 | `SellBufferIndex` | 1 | Buffer with top/SELL markers (Red) |
-| `SignalShift` | 1 | Bar to read (1 = last closed; 0 = live, repaints) |
-| `ConfirmBars` | 0 | Extra bars pivot must survive (anti-repaint) |
-| `OneTradePerSignal` | true | One trade per marker |
+| `ScanBars` | 60 | Recent bars scanned for a new marker |
+| `ConfirmBars` | 2 | Bars the pivot must survive before trading (anti-repaint) |
+| `TradeOnlyNewSignals` | true | Ignore markers already present at attach time |
 | `CloseOppositeFirst` | false | Close opposite EA trades on a new signal |
+| `DebugMode` | true | Log buffer reads to the Experts tab |
 
 ---
 
